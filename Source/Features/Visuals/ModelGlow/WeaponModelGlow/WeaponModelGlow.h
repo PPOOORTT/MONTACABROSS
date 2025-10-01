@@ -45,7 +45,7 @@ public:
         return &Weapon_sceneObjectUpdater_asm;
     }
 
-    [[nodiscard]] std::optional<color::HueInteger> getGlowHue(EntityTypeInfo entityTypeInfo) const
+    [[nodiscard]] Optional<color::HueInteger> hue(EntityTypeInfo entityTypeInfo) const
     {
         switch (entityTypeInfo.typeIndex) {
         case EntityTypeInfo::indexOf<cs2::C_MolotovGrenade>():

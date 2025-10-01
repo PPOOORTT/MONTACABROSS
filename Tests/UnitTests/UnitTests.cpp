@@ -19,3 +19,8 @@
 #include "Features/Visuals/OutlineGlow/TickingBombOutlineGlowTests.h"
 #include "Features/Visuals/OutlineGlow/WeaponOutlineGlowTests.h"
 #include "Features/Visuals/OutlineGlow/OutlineGlowTests.h"
+
+#include "Features/Visuals/ModelGlow/DefuseKitModelGlowTests.h"
+#include "Features/Visuals/ModelGlow/DroppedBombModelGlowTests.h"
+#include "Features/Visuals/ModelGlow/GrenadeProjectileModelGlowTests.h"
+#include "Features/Visuals/ModelGlow/PlayerModelGlowTests.h"

@@ -22,13 +22,13 @@ public:
         return state().defuseKitModelGlowDisabling;
     }
 
-    [[nodiscard]] color::HueInteger getGlowHue() const noexcept
+    [[nodiscard]] color::HueInteger hue() const
     {
         return hookContext.config().template getVariable<model_glow_vars::DefuseKitHue>();
     }
 
 private:
-    [[nodiscard]] auto& state() const noexcept
+    [[nodiscard]] auto& state() const
     {
         return hookContext.featuresStates().visualFeaturesStates.modelGlowState;
     }

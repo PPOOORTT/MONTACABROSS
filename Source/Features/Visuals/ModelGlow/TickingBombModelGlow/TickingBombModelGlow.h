@@ -21,7 +21,7 @@ public:
         return state().tickingBombModelGlowDisabling;
     }
 
-    [[nodiscard]] color::HueInteger getGlowHue() const
+    [[nodiscard]] color::HueInteger hue() const
     {
         return hookContext.config().template getVariable<model_glow_vars::TickingBombHue>();
     }

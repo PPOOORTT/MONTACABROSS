@@ -24,7 +24,7 @@ public:
         return state().grenadeProjectileModelGlowDisabling;
     }
 
-    [[nodiscard]] std::optional<color::HueInteger> getGlowHue(EntityTypeInfo entityTypeInfo) const noexcept
+    [[nodiscard]] Optional<color::HueInteger> hue(EntityTypeInfo entityTypeInfo) const
     {
         switch (entityTypeInfo.typeIndex) {
         case EntityTypeInfo::indexOf<cs2::C_FlashbangProjectile>(): return hookContext.config().template getVariable<model_glow_vars::FlashbangHue>();
@@ -36,7 +36,7 @@ public:
     }
 
 private:
-    [[nodiscard]] auto& state() const noexcept
+    [[nodiscard]] auto& state() const
     {
         return hookContext.featuresStates().visualFeaturesStates.modelGlowState;
     }

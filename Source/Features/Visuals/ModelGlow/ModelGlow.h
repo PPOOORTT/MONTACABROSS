@@ -121,10 +121,10 @@ private:
     }
 
     template <typename Hue>
-    [[nodiscard]] cs2::Color getColor(std::optional<Hue> hue, color::Saturation saturation) const
+    [[nodiscard]] cs2::Color getColor(Optional<Hue> hue, color::Saturation saturation) const
     {
-        if (hue.has_value())
-            return color::HSBtoRGB(*hue, saturation, color::Brightness{1.0f});
+        if (hue.hasValue())
+            return color::HSBtoRGB(hue.value(), saturation, color::Brightness{1.0f});
         return model_glow_params::kFallbackColor;
     }
 
@@ -143,12 +143,12 @@ private:
 
     [[nodiscard]] cs2::Color getGlowHue(auto&& glow, auto&& entity, [[maybe_unused]] EntityTypeInfo entityTypeInfo) const
     {
-        if constexpr (requires { { glow.getGlowHue(entity) }; }) {
-            return getColor(glow.getGlowHue(entity), getSaturation(glow, entity));
-        } else if constexpr (requires { { glow.getGlowHue(entityTypeInfo) }; }) {
-            return getColor(glow.getGlowHue(entityTypeInfo), getSaturation(glow, entity));
+        if constexpr (requires { { glow.hue(entity) }; }) {
+            return getColor(glow.hue(entity), getSaturation(glow, entity));
+        } else if constexpr (requires { { glow.hue(entityTypeInfo) }; }) {
+            return getColor(glow.hue(entityTypeInfo), getSaturation(glow, entity));
         } else {
-            return getColor(glow.getGlowHue(), getSaturation(glow, entity));
+            return getColor(glow.hue(), getSaturation(glow, entity));
         }
     }
 

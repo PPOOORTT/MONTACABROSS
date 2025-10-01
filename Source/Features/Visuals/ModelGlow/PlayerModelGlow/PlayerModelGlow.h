@@ -30,8 +30,7 @@ public:
 
     [[nodiscard]] bool shouldApplyGlow(auto&& playerPawn) const
     {
-        return getConfigVariable<model_glow_vars::Enabled>()
-            && playerPawn.isAlive().value_or(true)
+        return playerPawn.isAlive().value_or(true)
             && playerPawn.health().greaterThan(0).valueOr(true)
             && !playerPawn.isControlledByLocalPlayer()
             && playerPawn.isTTorCT()
@@ -53,15 +52,15 @@ public:
         return &PlayerPawn_sceneObjectUpdater_asm;
     }
 
-    [[nodiscard]] std::optional<color::Hue> getGlowHue(auto&& playerPawn) const
+    [[nodiscard]] Optional<color::Hue> hue(auto&& playerPawn) const
     {
         switch (getConfigVariable<model_glow_vars::PlayerGlowColorMode>()) {
         using enum PlayerModelGlowColorType;
         case EnemyAlly: return enemyAllyColorModeHue(playerPawn);
         case HealthBased: return healthBasedColorModeHue(playerPawn);
         case PlayerOrTeamColor:
-            if (const auto playerColor = getPlayerColorHue(playerPawn.playerController().playerColorIndex()))
-                return playerColor->toHueFloat();
+            if (const auto playerColor = getPlayerColorHue(playerPawn.playerController().playerColorIndex()); playerColor.hasValue())
+                return playerColor.value().toHueFloat();
             [[fallthrough]];
         case TeamColor: return teamColorModeHue(playerPawn);
         default: return {};
@@ -81,7 +80,7 @@ private:
         return hookContext.featuresStates().visualFeaturesStates.modelGlowState;
     }
 
-    [[nodiscard]] std::optional<color::Hue> teamColorModeHue(auto&& playerPawn) const noexcept
+    [[nodiscard]] Optional<color::Hue> teamColorModeHue(auto&& playerPawn) const noexcept
     {
         switch (playerPawn.teamNumber()) {
         case TeamNumber::TT: return static_cast<color::HueInteger>(getConfigVariable<model_glow_vars::TeamTHue>()).toHueFloat();
@@ -90,17 +89,17 @@ private:
         }
     }
 
-    [[nodiscard]] std::optional<color::Hue> enemyAllyColorModeHue(auto&& playerPawn) const noexcept
+    [[nodiscard]] Optional<color::Hue> enemyAllyColorModeHue(auto&& playerPawn) const noexcept
     {
         if (const auto isEnemy = playerPawn.isEnemy(); isEnemy.has_value())
             return (*isEnemy ? static_cast<color::HueInteger>(getConfigVariable<model_glow_vars::EnemyHue>()) : static_cast<color::HueInteger>(getConfigVariable<model_glow_vars::AllyHue>())).toHueFloat();
         return {};
     }
 
-    [[nodiscard]] std::optional<color::Hue> healthBasedColorModeHue(auto&& playerPawn) const noexcept
+    [[nodiscard]] Optional<color::Hue> healthBasedColorModeHue(auto&& playerPawn) const noexcept
     {
         if (const auto healthValue = playerPawn.health(); healthValue.hasValue()) {
-            const auto fraction = std::clamp(healthValue.value(), 0, 100) / 100.0f;
+            const auto fraction = healthFraction(healthValue.value());
 
             const color::HueInteger lowHealthHue{getConfigVariable<model_glow_vars::LowHealthHue>()};
             const color::HueInteger highHealthHue{getConfigVariable<model_glow_vars::HighHealthHue>()};
@@ -112,7 +111,19 @@ private:
         return {};
     }
 
-    [[nodiscard]] std::optional<color::HueInteger> getPlayerColorHue(auto playerColorIndex) const noexcept
+    [[nodiscard]] static constexpr float healthFraction(int playerHealth) noexcept
+    {
+        constexpr auto kMinHealth = 1;
+        constexpr auto kMaxHealth = 100;
+
+        if (playerHealth <= kMinHealth)
+            return 0.0f;
+        if (playerHealth >= kMaxHealth)
+            return 1.0f;
+        return static_cast<float>(playerHealth - kMinHealth) / (kMaxHealth - kMinHealth); 
+    }
+
+    [[nodiscard]] Optional<color::HueInteger> getPlayerColorHue(auto playerColorIndex) const noexcept
     {
         if (!playerColorIndex.hasValue())
             return {};
