@@ -29,12 +29,12 @@ public:
     [[nodiscard]] auto updateInMainThread() const noexcept
     {
         return [this](auto&& glow, auto&& entity, EntityTypeInfo entityTypeInfo) {
-            if (!hookContext.config().template getVariable<model_glow_vars::Enabled>() && !state().modelGlowDisabling)
+            if (!modelGlowEnabled() && !state().modelGlowDisabling)
                 return;
             if (!glow.enabled() && !glow.disablingFlag())
                 return;
 
-            if (hookContext.config().template getVariable<model_glow_vars::Enabled>() && glow.enabled() && shouldApplyGlow(glow, entity))
+            if (modelGlowEnabled() && glow.enabled() && shouldApplyGlow(glow, entity))
                 applyGlowInMainThread(glow, entityTypeInfo, entity);
             else
                 removeGlowInMainThread(glow, entity);
@@ -44,7 +44,8 @@ public:
     [[nodiscard]] auto updateInSceneObjectUpdater() const noexcept
     {
         return [this](auto&& glow, auto&& entity, EntityTypeInfo entityTypeInfo) {
-            if (hookContext.config().template getVariable<model_glow_vars::Enabled>() && glow.enabled() && shouldApplyGlow(glow, entity))
+            static_assert(isUsingSceneObjectUpdaterHook<decltype(glow)>());
+            if (modelGlowEnabled() && glow.enabled() && shouldApplyGlow(glow, entity))
                 entity.baseEntity().applySpawnProtectionEffectRecursively(getGlowHue(glow, entity, entityTypeInfo));
         };
     }
@@ -55,29 +56,20 @@ public:
             assert(state().modelGlowDisabling == false && "Should be already disabled");
             assert(glow.disablingFlag() == false && "Should be already disabled");
 
-            if (!hookContext.config().template getVariable<model_glow_vars::Enabled>())
-                return;
-
-            if (glow.enabled()) {
-                if constexpr (isUsingSceneObjectUpdaterHook<decltype(glow)>()) {
-                    if (hasSceneObjectUpdaterHooked(glow, entity))
-                        entity.setSceneObjectUpdater(glow.originalSceneObjectUpdater());
-                } else {
-                    entity.baseEntity().removeSpawnProtectionEffectRecursively();
-                }
-            }
+            if (modelGlowEnabled() && glow.enabled())
+                removeGlowInMainThread(glow, entity);
         };
     }
 
-    void onEntityListTraversed() const noexcept
+    void onEntityListTraversed() const
     {
         state().modelGlowDisabling = false;
-        hookContext.template make<PlayerModelGlow>().disablingFlag() = false;
-        hookContext.template make<WeaponModelGlow>().disablingFlag() = false;
-        hookContext.template make<DroppedBombModelGlow>().disablingFlag() = false;
-        hookContext.template make<TickingBombModelGlow>().disablingFlag() = false;
-        hookContext.template make<DefuseKitModelGlow>().disablingFlag() = false;
-        hookContext.template make<GrenadeProjectileModelGlow>().disablingFlag() = false;
+        state().playerModelGlowDisabling = false;
+        state().weaponModelGlowDisabling = false;
+        state().droppedBombModelGlowDisabling = false;
+        state().tickingBombModelGlowDisabling = false;
+        state().defuseKitModelGlowDisabling = false;
+        state().grenadeProjectileModelGlowDisabling = false;
     }
 
 private:
@@ -169,9 +161,14 @@ private:
             originalSceneObjectUpdater = entity.getSceneObjectUpdater();
     }
 
-    [[nodiscard]] auto& state() const noexcept
+    [[nodiscard]] auto& state() const
     {
         return hookContext.featuresStates().visualFeaturesStates.modelGlowState;
+    }
+
+    [[nodiscard]] bool modelGlowEnabled() const
+    {
+        return hookContext.config().template getVariable<model_glow_vars::Enabled>();
     }
 
     HookContext& hookContext;

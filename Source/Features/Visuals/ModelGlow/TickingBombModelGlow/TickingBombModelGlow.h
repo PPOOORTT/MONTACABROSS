@@ -16,6 +16,11 @@ public:
         return hookContext.config().template getVariable<model_glow_vars::GlowTickingBomb>();
     }
 
+    [[nodiscard]] bool shouldApplyGlow(auto&& plantedBomb) const
+    {
+        return plantedBomb.isTicking().valueOr(true);
+    }
+
     [[nodiscard]] bool& disablingFlag() const
     {
         return state().tickingBombModelGlowDisabling;

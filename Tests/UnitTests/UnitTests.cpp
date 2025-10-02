@@ -24,3 +24,6 @@
 #include "Features/Visuals/ModelGlow/DroppedBombModelGlowTests.h"
 #include "Features/Visuals/ModelGlow/GrenadeProjectileModelGlowTests.h"
 #include "Features/Visuals/ModelGlow/PlayerModelGlowTests.h"
+#include "Features/Visuals/ModelGlow/TickingBombModelGlowTests.h"
+#include "Features/Visuals/ModelGlow/WeaponModelGlowTests.h"
+#include "Features/Visuals/ModelGlow/ModelGlowTests.h"
