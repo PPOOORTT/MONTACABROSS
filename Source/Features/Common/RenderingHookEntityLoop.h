@@ -21,7 +21,7 @@ public:
     void run() const noexcept
     {
         hookContext.template make<EntitySystem>().forEachNetworkableEntityIdentity([this](const auto& entityIdentity) { handleEntityIdentity(entityIdentity); });
-        hookContext.template make<ModelGlow>().onEntityListTraversed();
+        hookContext.template make<ModelGlow>().postUpdateInMainThread();
     }
 
 private:

@@ -31,8 +31,8 @@ TEST_F(DefuseKitModelGlowTest, CorrectDisablingFlagIsReturned) {
 }
 
 class DefuseKitModelGlowHueTest
-    : public DefuseKitModelGlowTest
-    , public testing::WithParamInterface<color::HueInteger> {
+    : public DefuseKitModelGlowTest,
+      public testing::WithParamInterface<color::HueInteger> {
 };
 
 TEST_P(DefuseKitModelGlowHueTest, CorrectHueIsReturned) {

@@ -35,8 +35,8 @@ struct GrenadeProjectileModelGlowHueTestParam {
 };
 
 class GrenadeProjectileModelGlowHueTest
-    : public GrenadeProjectileModelGlowTest
-    , public testing::WithParamInterface<GrenadeProjectileModelGlowHueTestParam> {
+    : public GrenadeProjectileModelGlowTest,
+      public testing::WithParamInterface<GrenadeProjectileModelGlowHueTestParam> {
 };
 
 TEST_P(GrenadeProjectileModelGlowHueTest, CorrectHueIsReturned) {

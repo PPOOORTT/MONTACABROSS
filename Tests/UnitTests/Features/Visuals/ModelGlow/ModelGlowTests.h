@@ -17,6 +17,28 @@ protected:
     ModelGlow<MockHookContext> modelGlow{mockHookContext};
 };
 
+TEST_F(ModelGlowTest, DisablingFlagsAreClearedAfterUpdateInMainThread) {
+    auto& modelGlowState = featuresStates.visualFeaturesStates.modelGlowState;
+    modelGlowState.modelGlowDisabling = true;
+    modelGlowState.defuseKitModelGlowDisabling = true;
+    modelGlowState.droppedBombModelGlowDisabling = true;
+    modelGlowState.grenadeProjectileModelGlowDisabling = true;
+    modelGlowState.playerModelGlowDisabling = true;
+    modelGlowState.tickingBombModelGlowDisabling = true;
+    modelGlowState.weaponModelGlowDisabling = true;
+
+    EXPECT_CALL(mockHookContext, featuresStates()).WillRepeatedly(testing::ReturnRef(featuresStates));
+    modelGlow.postUpdateInMainThread();
+
+    EXPECT_FALSE(modelGlowState.modelGlowDisabling);
+    EXPECT_FALSE(modelGlowState.defuseKitModelGlowDisabling);
+    EXPECT_FALSE(modelGlowState.droppedBombModelGlowDisabling);
+    EXPECT_FALSE(modelGlowState.grenadeProjectileModelGlowDisabling);
+    EXPECT_FALSE(modelGlowState.playerModelGlowDisabling);
+    EXPECT_FALSE(modelGlowState.tickingBombModelGlowDisabling);
+    EXPECT_FALSE(modelGlowState.weaponModelGlowDisabling);
+}
+
 struct ModelGlowInactiveTestParam {
     bool modelGlowEnabled{};
     bool glowEnabled{};
@@ -278,3 +300,150 @@ TEST_F(ModelGlowActiveTest, WeaponUpdateInMainThread) {
         EntityTypeInfo{EntityTypeInfo::indexOf<cs2::C_WeaponAWP>()});
     EXPECT_EQ(featuresStates.visualFeaturesStates.modelGlowState.originalWeaponSceneObjectUpdater, dummySceneObjectUpdater);
 }
+
+TEST_F(ModelGlowActiveTest, DroppedBombUpdateInSceneObjectUpdater) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowDroppedBomb>(true);
+    mockConfig.expectGetVariable<model_glow_vars::DroppedBombHue>(model_glow_vars::DroppedBombHue::ValueType{color::HueInteger{72}});
+    
+    EXPECT_CALL(mockBaseWeapon, baseEntity()).WillRepeatedly(testing::ReturnRef(mockBaseEntity));
+    EXPECT_CALL(mockBaseEntity, hasOwner()).WillOnce(testing::Return(false));
+    EXPECT_CALL(mockBaseEntity, applySpawnProtectionEffectRecursively(cs2::Color{203, 255, 0}));
+
+    modelGlow.updateInSceneObjectUpdater()(
+        DroppedBombModelGlow{mockHookContext},
+        mockBaseWeapon,
+        EntityTypeInfo{EntityTypeInfo::indexOf<cs2::C_C4>()});
+}
+
+TEST_F(ModelGlowActiveTest, PlayerUpdateInSceneObjectUpdater) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowPlayers>(true);
+    mockConfig.expectGetVariable<model_glow_vars::GlowOnlyEnemies>(false);
+    mockConfig.expectGetVariable<model_glow_vars::PlayerGlowColorMode>(PlayerModelGlowColorType::EnemyAlly);
+    mockConfig.expectGetVariable<model_glow_vars::EnemyHue>(model_glow_vars::EnemyHue::ValueType{color::HueInteger{321}});
+    
+    EXPECT_CALL(mockPlayerPawn, isAlive()).WillOnce(testing::Return(true));
+    EXPECT_CALL(mockPlayerPawn, hasImmunity()).WillOnce(testing::Return(false));
+    EXPECT_CALL(mockPlayerPawn, isEnemy()).WillOnce(testing::Return(true));
+    EXPECT_CALL(mockPlayerPawn, health()).WillOnce(testing::Return(100));
+    EXPECT_CALL(mockPlayerPawn, isTTorCT()).WillOnce(testing::Return(true));
+    EXPECT_CALL(mockPlayerPawn, isControlledByLocalPlayer()).WillOnce(testing::Return(false));
+    EXPECT_CALL(mockPlayerPawn, baseEntity()).WillOnce(testing::ReturnRef(mockBaseEntity));
+    EXPECT_CALL(mockBaseEntity, applySpawnProtectionEffectRecursively(cs2::Color{255, 0, 165}));
+
+    modelGlow.updateInSceneObjectUpdater()(
+        PlayerModelGlow{mockHookContext},
+        mockPlayerPawn,
+        EntityTypeInfo{EntityTypeInfo::indexOf<cs2::C_CSPlayerPawn>()});
+}
+
+TEST_F(ModelGlowActiveTest, ImmunePlayerUpdateInSceneObjectUpdater) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowPlayers>(true);
+    mockConfig.expectGetVariable<model_glow_vars::GlowOnlyEnemies>(false);
+    mockConfig.expectGetVariable<model_glow_vars::PlayerGlowColorMode>(PlayerModelGlowColorType::EnemyAlly);
+    mockConfig.expectGetVariable<model_glow_vars::EnemyHue>(model_glow_vars::EnemyHue::ValueType{color::HueInteger{321}});
+    
+    EXPECT_CALL(mockPlayerPawn, isAlive()).WillOnce(testing::Return(true));
+    EXPECT_CALL(mockPlayerPawn, hasImmunity()).WillOnce(testing::Return(true));
+    EXPECT_CALL(mockPlayerPawn, isEnemy()).WillOnce(testing::Return(true));
+    EXPECT_CALL(mockPlayerPawn, health()).WillOnce(testing::Return(100));
+    EXPECT_CALL(mockPlayerPawn, isTTorCT()).WillOnce(testing::Return(true));
+    EXPECT_CALL(mockPlayerPawn, isControlledByLocalPlayer()).WillOnce(testing::Return(false));
+    EXPECT_CALL(mockPlayerPawn, baseEntity()).WillOnce(testing::ReturnRef(mockBaseEntity));
+    EXPECT_CALL(mockBaseEntity, applySpawnProtectionEffectRecursively(cs2::Color{255, 127, 210}));
+
+    modelGlow.updateInSceneObjectUpdater()(
+        PlayerModelGlow{mockHookContext},
+        mockPlayerPawn,
+        EntityTypeInfo{EntityTypeInfo::indexOf<cs2::C_CSPlayerPawn>()});
+}
+
+TEST_F(ModelGlowActiveTest, WeaponUpdateInSceneObjectUpdater) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowWeapons>(true);
+    mockConfig.expectGetVariable<model_glow_vars::MolotovHue>(model_glow_vars::MolotovHue::ValueType{color::HueInteger{43}});
+
+    EXPECT_CALL(mockBaseWeapon, baseEntity()).WillRepeatedly(testing::ReturnRef(mockBaseEntity));
+    EXPECT_CALL(mockBaseEntity, hasOwner()).WillOnce(testing::Return(false));
+    EXPECT_CALL(mockBaseEntity, applySpawnProtectionEffectRecursively(cs2::Color{255, 182, 0}));
+
+    modelGlow.updateInSceneObjectUpdater()(
+        WeaponModelGlow{mockHookContext},
+        mockBaseWeapon,
+        EntityTypeInfo{EntityTypeInfo::indexOf<cs2::C_MolotovGrenade>()});
+}
+
+TEST_F(ModelGlowActiveTest, DefuseKitUpdateOnUnload) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowDefuseKits>(true);
+    EXPECT_CALL(mockBaseEntity, removeSpawnProtectionEffectRecursively());
+    modelGlow.onUnload()(DefuseKitModelGlow{mockHookContext}, mockBaseEntity);
+}
+
+TEST_F(ModelGlowActiveTest, HookedDroppedBombOnUnload) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowDroppedBomb>(true);
+    const auto dummySceneObjectUpdater = reinterpret_cast<std::uint64_t(*)(cs2::C_CSWeaponBase*, void*, bool)>(0x123123);
+    featuresStates.visualFeaturesStates.modelGlowState.originalWeaponSceneObjectUpdater = dummySceneObjectUpdater;
+    EXPECT_CALL(mockBaseWeapon, getSceneObjectUpdater()).WillOnce(testing::Return(&Weapon_sceneObjectUpdater_asm));
+    EXPECT_CALL(mockBaseWeapon, setSceneObjectUpdater(dummySceneObjectUpdater));
+
+    modelGlow.onUnload()(DroppedBombModelGlow{mockHookContext}, mockBaseWeapon);
+}
+
+TEST_F(ModelGlowActiveTest, NotHookedDroppedBombOnUnload) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowDroppedBomb>(true);
+    featuresStates.visualFeaturesStates.modelGlowState.originalWeaponSceneObjectUpdater = nullptr;
+    const auto dummySceneObjectUpdater = reinterpret_cast<std::uint64_t(*)(cs2::C_CSWeaponBase*, void*, bool)>(0x123123);
+    EXPECT_CALL(mockBaseWeapon, getSceneObjectUpdater()).WillOnce(testing::Return(dummySceneObjectUpdater));
+
+    modelGlow.onUnload()(DroppedBombModelGlow{mockHookContext}, mockBaseWeapon);
+}
+
+TEST_F(ModelGlowActiveTest, GrenadeProjectileOnUnload) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowGrenadeProjectiles>(true);
+    EXPECT_CALL(mockBaseEntity, removeSpawnProtectionEffectRecursively());
+    modelGlow.onUnload()(GrenadeProjectileModelGlow{mockHookContext}, mockBaseEntity);
+}
+
+TEST_F(ModelGlowActiveTest, HookedPlayerOnUnload) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowPlayers>(true);
+    const auto dummySceneObjectUpdater = reinterpret_cast<std::uint64_t(*)(cs2::C_CSPlayerPawn*, void*, bool)>(0xbadc0de);
+    featuresStates.visualFeaturesStates.modelGlowState.originalPlayerPawnSceneObjectUpdater = dummySceneObjectUpdater;
+    EXPECT_CALL(mockPlayerPawn, getSceneObjectUpdater()).WillOnce(testing::Return(&PlayerPawn_sceneObjectUpdater_asm));
+    EXPECT_CALL(mockPlayerPawn, setSceneObjectUpdater(dummySceneObjectUpdater));
+
+    modelGlow.onUnload()(PlayerModelGlow{mockHookContext}, mockPlayerPawn);
+}
+
+TEST_F(ModelGlowActiveTest, NotHookedPlayerOnUnload) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowPlayers>(true);
+    featuresStates.visualFeaturesStates.modelGlowState.originalPlayerPawnSceneObjectUpdater = nullptr;
+    const auto dummySceneObjectUpdater = reinterpret_cast<std::uint64_t(*)(cs2::C_CSPlayerPawn*, void*, bool)>(0xbadc0de);
+    EXPECT_CALL(mockPlayerPawn, getSceneObjectUpdater()).WillOnce(testing::Return(dummySceneObjectUpdater));
+
+    modelGlow.onUnload()(PlayerModelGlow{mockHookContext}, mockPlayerPawn);
+}
+
+TEST_F(ModelGlowActiveTest, TickingBombOnUnload) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowTickingBomb>(true);
+    EXPECT_CALL(mockPlantedC4, baseEntity()).WillOnce(testing::ReturnRef(mockBaseEntity));
+    EXPECT_CALL(mockBaseEntity, removeSpawnProtectionEffectRecursively());
+    modelGlow.onUnload()(TickingBombModelGlow{mockHookContext}, mockPlantedC4);
+}
+
+TEST_F(ModelGlowActiveTest, HookedWeaponOnUnload) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowWeapons>(true);
+    const auto dummySceneObjectUpdater = reinterpret_cast<std::uint64_t(*)(cs2::C_CSWeaponBase*, void*, bool)>(0x567890abcdef);
+    featuresStates.visualFeaturesStates.modelGlowState.originalWeaponSceneObjectUpdater = dummySceneObjectUpdater;
+    EXPECT_CALL(mockBaseWeapon, getSceneObjectUpdater()).WillOnce(testing::Return(&Weapon_sceneObjectUpdater_asm));
+    EXPECT_CALL(mockBaseWeapon, setSceneObjectUpdater(dummySceneObjectUpdater));
+
+    modelGlow.onUnload()(WeaponModelGlow{mockHookContext}, mockBaseWeapon);
+}
+
+TEST_F(ModelGlowActiveTest, NotHookedWeaponOnUnload) {
+    mockConfig.expectGetVariable<model_glow_vars::GlowWeapons>(true);
+    featuresStates.visualFeaturesStates.modelGlowState.originalWeaponSceneObjectUpdater = nullptr;
+    const auto dummySceneObjectUpdater = reinterpret_cast<std::uint64_t(*)(cs2::C_CSWeaponBase*, void*, bool)>(0x567890abcdef);
+    EXPECT_CALL(mockBaseWeapon, getSceneObjectUpdater()).WillOnce(testing::Return(dummySceneObjectUpdater));
+
+    modelGlow.onUnload()(WeaponModelGlow{mockHookContext}, mockBaseWeapon);
+}
+

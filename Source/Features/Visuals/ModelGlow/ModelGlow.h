@@ -61,7 +61,7 @@ public:
         };
     }
 
-    void onEntityListTraversed() const
+    void postUpdateInMainThread() const
     {
         state().modelGlowDisabling = false;
         state().playerModelGlowDisabling = false;
@@ -92,24 +92,18 @@ private:
 
     void applyGlowInMainThread(auto&& glow, [[maybe_unused]] EntityTypeInfo entityTypeInfo, auto&& entity) const
     {
-        if constexpr (isUsingSceneObjectUpdaterHook<decltype(glow)>()) {
-            if (!hasSceneObjectUpdaterHooked(glow, entity)) {
-                storeOriginalSceneObjectUpdater(glow, entity);
-                hookSceneObjectUpdater(glow, entity);
-            }
-        } else {
+        if constexpr (isUsingSceneObjectUpdaterHook<decltype(glow)>())
+            hookSceneObjectUpdater(entity, glow);
+        else
             entity.baseEntity().applySpawnProtectionEffectRecursively(getGlowHue(glow, entity, entityTypeInfo));
-        }
     }
 
     void removeGlowInMainThread(auto&& glow, auto&& entity) const
     {
-        if constexpr (isUsingSceneObjectUpdaterHook<decltype(glow)>()) {
-            if (hasSceneObjectUpdaterHooked(glow, entity))
-                entity.setSceneObjectUpdater(glow.originalSceneObjectUpdater());
-        } else {
+        if constexpr (isUsingSceneObjectUpdaterHook<decltype(glow)>())
+            restoreSceneObjectUpdater(entity, glow);
+        else
             entity.baseEntity().removeSpawnProtectionEffectRecursively();
-        }
     }
 
     template <typename Hue>
@@ -144,19 +138,24 @@ private:
         }
     }
 
-    void hookSceneObjectUpdater(auto&& glow, auto&& entity) const noexcept
+    void hookSceneObjectUpdater(auto&& entity, auto&& glow) const
     {
-        entity.setSceneObjectUpdater(glow.replacementSceneObjectUpdater());
+        if (entity.getSceneObjectUpdater() != glow.replacementSceneObjectUpdater()) {
+            storeOriginalSceneObjectUpdater(glow, entity);
+            entity.setSceneObjectUpdater(glow.replacementSceneObjectUpdater());
+        }
     }
 
-    [[nodiscard]] bool hasSceneObjectUpdaterHooked(auto&& glow, auto&& entity) const noexcept
+    void restoreSceneObjectUpdater(auto&& entity, auto&& glow) const
     {
-        return entity.getSceneObjectUpdater() == glow.replacementSceneObjectUpdater();
+        if (entity.getSceneObjectUpdater() == glow.replacementSceneObjectUpdater())
+            entity.setSceneObjectUpdater(glow.originalSceneObjectUpdater());
     }
 
-    void storeOriginalSceneObjectUpdater(auto&& glow, auto&& entity) const noexcept
+    void storeOriginalSceneObjectUpdater(auto&& glow, auto&& entity) const
     {
         auto& originalSceneObjectUpdater = glow.originalSceneObjectUpdater();
+        assert(originalSceneObjectUpdater == nullptr || originalSceneObjectUpdater == entity.getSceneObjectUpdater());
         if (originalSceneObjectUpdater == nullptr)
             originalSceneObjectUpdater = entity.getSceneObjectUpdater();
     }

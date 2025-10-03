@@ -225,9 +225,9 @@ struct PlayerModelGlowHealthBasedHueParam {
     Optional<color::Hue::ValueType> expectedHue{};
 };
 
-class PlayerModelGlowHealthBasedHueTest :
-    public PlayerModelGlowTest,
-    public testing::WithParamInterface<std::tuple<PlayerModelGlowHealthBasedHueConfigVariables, PlayerModelGlowHealthBasedHueParam>> {
+class PlayerModelGlowHealthBasedHueTest
+    : public PlayerModelGlowTest,
+      public testing::WithParamInterface<std::tuple<PlayerModelGlowHealthBasedHueConfigVariables, PlayerModelGlowHealthBasedHueParam>> {
 };
 
 TEST_P(PlayerModelGlowHealthBasedHueTest, CorrectHueIsReturned) {

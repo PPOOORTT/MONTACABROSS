@@ -44,8 +44,8 @@ TEST_F(DroppedBombModelGlowTest, CorrectReplacementSceneObjectUpdaterIsReturned)
 }
 
 class DroppedBombModelGlowHueTest
-    : public DroppedBombModelGlowTest
-    , public testing::WithParamInterface<color::HueInteger> {
+    : public DroppedBombModelGlowTest,
+      public testing::WithParamInterface<color::HueInteger> {
 };
 
 TEST_P(DroppedBombModelGlowHueTest, CorrectHueIsReturned) {
@@ -66,8 +66,8 @@ struct DroppedBombModelGlowShouldApplyTestParam {
 };
 
 class DroppedBombModelGlowShouldApplyTest
-    : public DroppedBombModelGlowTest
-    , public testing::WithParamInterface<DroppedBombModelGlowShouldApplyTestParam> {
+    : public DroppedBombModelGlowTest,
+      public testing::WithParamInterface<DroppedBombModelGlowShouldApplyTestParam> {
 };
 
 TEST_P(DroppedBombModelGlowShouldApplyTest, ShouldApplyGlowIfBombIsDropped) {
